@@ -11,11 +11,13 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export function findChrome() {
   const local = process.env.LOCALAPPDATA || '';
   return [
+    process.env.BROWSER,
+    '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/chromium', '/usr/bin/chromium-browser',
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
     'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
     join(local, 'Google', 'Chrome', 'Application', 'chrome.exe'),
     'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-  ].find((p) => existsSync(p));
+  ].find((p) => p && existsSync(p));
 }
 
 export async function startServer(port) {
@@ -41,6 +43,7 @@ export async function launch({ gpu = true, width = 1280, height = 720, headed = 
     '--enable-unsafe-swiftshader', '--use-gl=angle',
   ];
   if (!gpu) args.push('--use-angle=swiftshader');
+  if (process.platform === 'linux') args.push('--no-sandbox', '--disable-dev-shm-usage');
   const browser = await puppeteer.launch({ executablePath: exe, headless: headed ? false : 'new', args, defaultViewport: { width, height } });
   return browser;
 }

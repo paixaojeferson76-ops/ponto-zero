@@ -31,6 +31,10 @@ Os controles de toque seguem o estilo dos FPS mobile:
 | **USAR** (aparece perto do sítio/da carga) | segurar para plantar/desarmar |
 | **PLACAR** · **EQUIP.** · **⏸** | placar (segurar) · arma primária na preparação · pausa |
 
+**Os botões não apareceram?** O jogo reconhece o celular por várias pistas e, se mesmo assim ele começar em modo PC, o **primeiro toque de dedo**
+liga o modo celular sozinho. Para forçar: no menu principal, **Controles → Toque (celular)** (a página recarrega), ou abra o link com `?touch=1` no final.
+O rodapé do menu mostra o modo atual. Se a tela parecer "velha" após uma atualização, recarregue a página (cada publicação carimba a versão dos arquivos).
+
 Na primeira vez no celular o jogo já vem com qualidade **baixa** e bots **fáceis** (mudam em Configurações). A aba **Toque** ajusta
 sensibilidade, **assistência de mira** (puxa a mira de leve para o inimigo enquanto você atira) e tamanho dos botões. Se ficar pesado,
 reduza a **resolução de renderização** em Vídeo. No Android o jogo pede tela cheia e paisagem; no iPhone não existe tela cheia no Safari —

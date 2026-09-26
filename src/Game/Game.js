@@ -16,7 +16,7 @@ import { MaterialLibrary } from '../Render/Materials.js';
 import { SceneManager } from '../Render/SceneManager.js';
 import { ViewModel } from '../Render/ViewModel.js';
 import { Input } from '../Systems/Input.js';
-import { TouchControls, detectTouchMode } from '../Systems/TouchControls.js';
+import { TouchControls, detectTouchMode, readInputPref } from '../Systems/TouchControls.js';
 import { ASSIST, computeAssist } from '../Player/AimAssist.js';
 import { DebugOverlay } from '../UI/DebugOverlay.js';
 import { HUD } from '../UI/HUD.js';
@@ -99,13 +99,7 @@ export class Game {
     menusLoading(0.85, 'Preparando interface e áudio…');
     await nextFrame();
 
-    if (this.isTouch) {
-      this.touch = new TouchControls($('touch-ui'));
-      this.touch.setScale(s.data.touch.buttonScale);
-      this.touch.onPause = () => this.pause();
-      this.touch.onScoreboard = (down) => { if (this.session) this.scoreboard.show(down); };
-      this.touch.onLoadout = () => this._onAction('loadout', true);
-    }
+    if (this.isTouch) this._initTouch();
     this.input = new Input(canvas, () => this.settings.data.controls, this.touch || null);
     this.input.rawInput = s.data.mouse.rawInput;
     this.input.onLockChange = (locked) => this._onLockChange(locked);
@@ -132,6 +126,7 @@ export class Game {
     });
     s.onChange(() => {});
     this._bindAutoPause();
+    this._bindTouchFallback();
     canvas.addEventListener('click', () => { if (this.state === 'paused-lock') this.resume(); });
     $('click-to-play').addEventListener('click', () => this.resume());
 
@@ -278,6 +273,54 @@ export class Game {
       return;
     }
     if (this.state === 'playing') this.pause();
+  }
+
+  /** Cria a camada de botões de toque e liga os callbacks. */
+  _initTouch() {
+    this.touch = new TouchControls($('touch-ui'));
+    this.touch.setScale(this.settings.data.touch.buttonScale);
+    this.touch.onPause = () => this.pause();
+    this.touch.onScoreboard = (down) => { if (this.session) this.scoreboard.show(down); };
+    this.touch.onLoadout = () => this._onAction('loadout', true);
+  }
+
+  /**
+   * Plano B da detecção: se o aparelho não foi reconhecido como celular mas o primeiro contato é um TOQUE de dedo
+   * (e nenhum mouse foi usado), liga o modo celular na hora. Cobre "site para computador" e navegadores que mentem.
+   */
+  _bindTouchFallback() {
+    if (this.isTouch || readInputPref() === 'desktop') return;
+    let sawMouse = false;
+    const onDown = (e) => {
+      if (e.pointerType === 'mouse') { sawMouse = true; return; }
+      if (e.pointerType === 'touch' && !sawMouse && !this.isTouch) {
+        window.removeEventListener('pointerdown', onDown, true);
+        this.enableTouchMode();
+      }
+    };
+    window.addEventListener('pointerdown', onDown, true);
+  }
+
+  /** Liga o modo celular durante a execução (usado pelo plano B). */
+  enableTouchMode() {
+    if (this.isTouch) return;
+    this.isTouch = true;
+    document.body.classList.add('touch');
+    if (this.settings.firstRun) {
+      this.settings.update((d) => {
+        d.video.quality = 'LOW'; d.video.showFps = false;
+        d.gameplay.difficulty = 'EASY'; d.gameplay.headBobAmount = 0.5; d.gameplay.cameraEffects = 0.6;
+      });
+    }
+    this._initTouch();
+    this.input.touch = this.touch;
+    this.sm.mobile = true;
+    this.sm.applyVideo(this.settings.data.video);
+    this.effects.setQuality(this.sm.preset);
+    this.mapRenderer.setShadows(this.sm.renderer.shadowMap.enabled);
+    this.viewModel.sizeMul = 0.82;
+    if (this.menus) this.menus.refreshMain();
+    if (this.state === 'playing') this.touch.setActive(true);
   }
 
   /** Celular: tela cheia + paisagem + tela sempre ligada (melhor esforço; cada navegador decide). */

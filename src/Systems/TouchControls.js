@@ -267,11 +267,59 @@ export class TouchControls {
 
 const clampAdd = (a, b) => Math.max(-1, Math.min(1, a + b));
 
-/** Modo celular? (?touch=1/0 força; senão ponteiro "grosso" sem hover = celular/tablet). */
+const PREF_KEY = 'pontozero.inputMode';
+
+/** Preferência manual de controles: 'auto' (padrão) | 'touch' | 'desktop'. */
+export function readInputPref() {
+  try {
+    const v = localStorage.getItem(PREF_KEY);
+    return v === 'touch' || v === 'desktop' ? v : 'auto';
+  } catch {
+    return 'auto';
+  }
+}
+
+export function writeInputPref(v) {
+  try {
+    if (v === 'auto') localStorage.removeItem(PREF_KEY);
+    else localStorage.setItem(PREF_KEY, v);
+  } catch { /* sem armazenamento: vale só nesta sessão */ }
+}
+
+/**
+ * Decide se o aparelho deve usar controles de toque combinando várias pistas (nenhuma é confiável sozinha:
+ * navegadores no modo "site para computador" e alguns aparelhos reportam o ponteiro de forma diferente).
+ * Notebook com tela de toque (ponteiro principal = mouse) continua em teclado e mouse.
+ */
+export function decideTouch(s) {
+  const touchCapable = (s.maxTouchPoints || 0) > 0 || !!s.ontouchstart;
+  if (!touchCapable) return false;
+  const mousePrimary = !!s.fine && !!s.hover;
+  return !!(s.mobileUA || s.uaDataMobile || s.iPadOS || s.coarse || !mousePrimary);
+}
+
+function sampleDevice() {
+  const nav = navigator;
+  const mm = (q) => !!(window.matchMedia && matchMedia(q).matches);
+  return {
+    maxTouchPoints: nav.maxTouchPoints,
+    ontouchstart: 'ontouchstart' in window,
+    mobileUA: /Android|iPhone|iPad|iPod|Mobile|Silk|Kindle|Opera Mini|IEMobile/i.test(nav.userAgent || ''),
+    uaDataMobile: !!(nav.userAgentData && nav.userAgentData.mobile === true),
+    iPadOS: nav.platform === 'MacIntel' && nav.maxTouchPoints > 1,   // iPad se apresentando como Mac
+    coarse: mm('(pointer: coarse)'),
+    fine: mm('(pointer: fine)'),
+    hover: mm('(hover: hover)'),
+  };
+}
+
+/** Modo celular? (?touch=1/0 força; depois a preferência do menu; por fim a detecção automática). */
 export function detectTouchMode(query) {
   const forced = query && query.get('touch');
   if (forced === '1') return true;
   if (forced === '0') return false;
-  if (!window.matchMedia) return false;
-  return matchMedia('(pointer: coarse)').matches && matchMedia('(hover: none)').matches;
+  const pref = readInputPref();
+  if (pref === 'touch') return true;
+  if (pref === 'desktop') return false;
+  return decideTouch(sampleDevice());
 }

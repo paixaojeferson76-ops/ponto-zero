@@ -31,6 +31,12 @@ jobs:
         run: npm test
       - name: Montar a pasta do site
         run: npm run build
+      - name: Instalar dependências dos testes de navegador
+        run: npm ci
+      - name: Testar o site montado no Chrome (PC e celular emulado)
+        run: node Tests/e2e/site.mjs --no-build
+        env:
+          BROWSER: /usr/bin/google-chrome
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

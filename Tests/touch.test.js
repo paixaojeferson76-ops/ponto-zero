@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { stickToMove } from '../src/Systems/TouchControls.js';
+import { stickToMove, decideTouch } from '../src/Systems/TouchControls.js';
 import { computeAssist, ASSIST } from '../src/Player/AimAssist.js';
 import { createGame } from '../src/Game/MatchSetup.js';
 import { MOVEMENT } from '../src/Config/Tuning.js';
@@ -10,6 +10,30 @@ import { NavGrid } from '../src/World/NavGrid.js';
 import { makeBody, makeWorld, cmd, run } from './helpers.js';
 
 const R = 62;
+
+// ---------------------------------------------------------------- detecção de celular
+
+const DEV = (o) => ({ maxTouchPoints: 0, ontouchstart: false, mobileUA: false, uaDataMobile: false, iPadOS: false, coarse: false, fine: true, hover: true, ...o });
+
+test('detecção: PC sem toque e notebook com tela de toque continuam em teclado e mouse', () => {
+  assert.equal(decideTouch(DEV({})), false, 'PC');
+  assert.equal(decideTouch(DEV({ maxTouchPoints: 10, ontouchstart: true })), false, 'notebook com tela de toque (mouse é o ponteiro principal)');
+});
+
+test('detecção: celulares e tablets ligam o modo de toque, mesmo quando o navegador reporta mal', () => {
+  assert.equal(decideTouch(DEV({ maxTouchPoints: 5, mobileUA: true, coarse: true, fine: false, hover: false })), true, 'Android normal');
+  assert.equal(decideTouch(DEV({ maxTouchPoints: 5, ontouchstart: true, coarse: true, fine: false, hover: false })), true, 'modo "site para computador" (UA de PC, mas ponteiro grosso)');
+  assert.equal(decideTouch(DEV({ maxTouchPoints: 5, mobileUA: true })), true, 'UA de celular mesmo reportando mouse (fine+hover)');
+  assert.equal(decideTouch(DEV({ maxTouchPoints: 5, uaDataMobile: true })), true, 'Client Hints dizem mobile');
+  assert.equal(decideTouch(DEV({ maxTouchPoints: 5, iPadOS: true })), true, 'iPad se apresentando como Mac');
+  assert.equal(decideTouch(DEV({ maxTouchPoints: 5, fine: false, hover: false })), true, 'sem mouse como ponteiro principal');
+  assert.equal(decideTouch(DEV({ mobileUA: true, coarse: true })), false, 'sem suporte a toque não liga (ex.: emulador sem toque)');
+});
+
+test('detecção: o caso que mente totalmente (UA de PC + ponteiro "mouse") fica para o plano B do primeiro toque', () => {
+  // aqui a decisão automática é "PC"; o jogo liga o modo de toque no primeiro pointerdown do tipo touch (testado no E2E)
+  assert.equal(decideTouch(DEV({ maxTouchPoints: 5, ontouchstart: true })), false);
+});
 
 test('joystick: zona morta, direção e escala analógica', () => {
   assert.deepEqual(stickToMove(3, 2, R), { moveX: 0, moveZ: 0, run: false, magnitude: 0 }, 'zona morta');

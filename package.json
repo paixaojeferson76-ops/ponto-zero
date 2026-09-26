@@ -9,11 +9,12 @@
     "start": "node server/serve.mjs --open",
     "serve": "node server/serve.mjs",
     "test": "node --test \"Tests/**/*.test.js\"",
-    "test:e2e": "node Tests/e2e/smoke.mjs --gpu && node Tests/e2e/flow.mjs --gpu && node Tests/e2e/touch.mjs --gpu",
+    "test:e2e": "node Tests/e2e/smoke.mjs --gpu && node Tests/e2e/flow.mjs --gpu && node Tests/e2e/touch.mjs --gpu && node Tests/e2e/touch-detect.mjs --gpu && node Tests/e2e/site.mjs --gpu",
     "test:lock": "node Tests/e2e/lock.mjs",
     "vendor": "node tools/vendor.mjs",
     "build": "node tools/build-site.mjs",
-    "test:touch": "node Tests/e2e/touch.mjs --gpu"
+    "test:touch": "node Tests/e2e/touch.mjs --gpu",
+    "test:site": "node Tests/e2e/site.mjs --gpu"
   },
   "engines": {
     "node": ">=20"

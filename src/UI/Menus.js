@@ -5,6 +5,7 @@ import { RESOLUTION_OPTIONS } from '../Config/Quality.js';
 import { CAMERA, MOUSE } from '../Config/Tuning.js';
 import { PRIMARY_CHOICES, WEAPONS } from '../Config/WeaponDefs.js';
 import { Crosshair } from './Crosshair.js';
+import { readInputPref, writeInputPref } from '../Systems/TouchControls.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -92,6 +93,9 @@ export class Menus {
     const g = this.settings.data.gameplay;
     const side = $('opt-side'), diff = $('opt-diff'), size = $('opt-size');
     side.value = g.playerSide; diff.value = g.difficulty; size.value = String(g.teamSize);
+    const inputSel = $('opt-input');
+    inputSel.value = readInputPref();
+    inputSel.onchange = () => { writeInputPref(inputSel.value); location.reload(); };   // recarrega para aplicar
     side.onchange = () => this.settings.update((d) => { d.gameplay.playerSide = side.value; });
     diff.onchange = () => this.settings.update((d) => { d.gameplay.difficulty = diff.value; });
     size.onchange = () => this.settings.update((d) => { d.gameplay.teamSize = Number(size.value); });
@@ -122,7 +126,14 @@ export class Menus {
     this.current = null;
   }
 
+  /** Atualiza o rótulo do modo de controles (também depois de uma troca automática em tempo de execução). */
+  refreshMain() {
+    const el = $('input-mode-note');
+    if (el) el.textContent = document.body.classList.contains('touch') ? 'Modo atual: TOQUE (celular)' : 'Modo atual: teclado e mouse';
+  }
+
   showMain() {
+    this.refreshMain();
     const g = this.settings.data.gameplay;
     $('opt-side').value = g.playerSide;
     $('opt-diff').value = g.difficulty;

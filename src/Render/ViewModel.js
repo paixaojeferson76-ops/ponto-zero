@@ -51,6 +51,7 @@ export class ViewModel {
     this.throwT = 1;
     this.equipBlend = 0;
     this.visible = true;
+    this.sizeMul = 1;             // < 1 no celular (tela pequena)
     this.root.visible = false;
   }
 
@@ -121,6 +122,7 @@ export class ViewModel {
     const m = this.current;
     const pose = POSES[m.kind] || POSES.rifle;
     const body = p.body;
+    m.group.scale.setScalar(pose.scale * this.sizeMul);
 
     // recuo por mola (impulso a cada tiro)
     const rec = w.recoil;

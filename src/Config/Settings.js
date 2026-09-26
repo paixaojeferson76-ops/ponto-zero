@@ -42,6 +42,11 @@ export const DEFAULT_SETTINGS = {
     dynamicMovement: CROSSHAIR_DEFAULTS.DYNAMIC_MOVEMENT,
     dynamicFiring: CROSSHAIR_DEFAULTS.DYNAMIC_FIRING,
   },
+  touch: {
+    sensitivity: 1.0,       // velocidade de giro ao arrastar (celular)
+    aimAssist: 0.6,         // 0 = desligado … 1 = forte
+    buttonScale: 1.0,       // tamanho dos botões na tela
+  },
   controls: DEFAULT_BINDINGS,
 };
 
@@ -73,6 +78,9 @@ function sanitize(s) {
   s.gameplay.roundsToWin = clamp(Math.round(s.gameplay.roundsToWin), 1, 15);
   if (!['EASY', 'NORMAL', 'HARD'].includes(s.gameplay.difficulty)) s.gameplay.difficulty = 'NORMAL';
   if (!['attack', 'defend'].includes(s.gameplay.playerSide)) s.gameplay.playerSide = 'attack';
+  s.touch.sensitivity = clamp(s.touch.sensitivity, 0.3, 3);
+  s.touch.aimAssist = clamp(s.touch.aimAssist, 0, 1);
+  s.touch.buttonScale = clamp(s.touch.buttonScale, 0.7, 1.5);
   s.crosshair.size = clamp(s.crosshair.size, 0, 30);
   s.crosshair.thickness = clamp(s.crosshair.thickness, 1, 8);
   s.crosshair.gap = clamp(s.crosshair.gap, -4, 20);
@@ -97,9 +105,10 @@ export class Settings {
 
   load() {
     let saved = null;
+    this.firstRun = true;
     try {
       const raw = this.storage && this.storage.getItem(STORAGE_KEY);
-      if (raw) saved = JSON.parse(raw);
+      if (raw) { saved = JSON.parse(raw); this.firstRun = false; }
     } catch {
       saved = null;
     }

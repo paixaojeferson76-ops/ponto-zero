@@ -38,6 +38,8 @@ export class HUD {
     this.hitTimer = 0;
     this.vDamage = 0;
     this.lastAliveKey = '';
+    this.interactShow = false;
+    this.useLabel = 'USAR';
   }
 
   show(v) { this.root.classList.toggle('hidden', !v); }
@@ -224,7 +226,11 @@ export class HUD {
       if (player.team === TEAM.ATTACK && !match.bomb.planted && match.siteAt(player.pos)) { show = true; text = `SEGURE [${useKey}] PARA PLANTAR`; }
       else if (player.team === TEAM.DEFEND && match.bomb.planted && Math.hypot(player.pos.x - match.bomb.x, player.pos.z - match.bomb.z) <= MATCH_RULES.USE_RADIUS) { show = true; text = `SEGURE [${useKey}] PARA DESARMAR`; }
     }
-    el.interact.classList.toggle('show', show);
+    this.interactShow = show;
+    this.useLabel = match.interaction ? (match.interaction.kind === 'plant' ? 'PLANTANDO' : 'DESARMANDO') : (text.includes('DESARMAR') ? 'DESARMAR' : 'PLANTAR');
+    // no toque o botão USAR já diz o que fazer: só mostramos a barra enquanto está plantando/desarmando
+    const box = document.body.classList.contains('touch') ? !!match.interaction : show;
+    el.interact.classList.toggle('show', box);
     this._set('itxt', el.interactText, 'textContent', text);
     el.interactBar.style.width = `${progress * 100}%`;
   }
@@ -258,8 +264,8 @@ export class HUD {
     if (this.cache.gk !== gk) {
       this.cache.gk = gk;
       const names = { frag: 'FRAG', flash: 'CEGA', smoke: 'FUMA' };
-      e.grenades.innerHTML = ['frag', 'flash', 'smoke'].map((k) => `<span class="gren ${w.grenades[k] > 0 ? 'has' : ''} ${w.selectedGrenade === k && w.grenades[k] > 0 ? 'sel' : ''}">${names[k]} ${w.grenades[k]}</span>`).join('');
-      const slot = (key, n, label) => (w.slots[key] ? `<span class="slot ${w.activeKey === key ? 'active' : ''}">${n} ${label}</span>` : '');
+      e.grenades.innerHTML = ['frag', 'flash', 'smoke'].map((k) => `<span data-key="${k}" class="gren ${w.grenades[k] > 0 ? 'has' : ''} ${w.selectedGrenade === k && w.grenades[k] > 0 ? 'sel' : ''}">${names[k]} ${w.grenades[k]}</span>`).join('');
+      const slot = (key, n, label) => (w.slots[key] ? `<span data-key="${key}" class="slot ${w.activeKey === key ? 'active' : ''}">${n} ${label}</span>` : '');
       e.slots.innerHTML = slot('primary', 1, w.slots.primary ? w.slots.primary.def.short : '') + slot('secondary', 2, w.slots.secondary ? w.slots.secondary.def.short : '') + slot('melee', 3, 'FACA');
     }
   }

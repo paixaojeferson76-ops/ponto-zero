@@ -6,8 +6,9 @@ import { QUALITY_PRESETS, RESOLUTION_OPTIONS } from '../Config/Quality.js';
 const SUN_DIR = new THREE.Vector3(-0.42, 0.78, 0.46).normalize();
 
 export class SceneManager {
-  constructor(canvas, video) {
+  constructor(canvas, video, { mobile = false } = {}) {
     this.canvas = canvas;
+    this.mobile = mobile;
     this.video = video;
     this.preset = QUALITY_PRESETS[video.quality] || QUALITY_PRESETS.MEDIUM;
     this.renderer = new THREE.WebGLRenderer({
@@ -160,7 +161,11 @@ export class SceneManager {
     const res = RESOLUTION_OPTIONS.find((o) => o.id === this.video.resolution) || RESOLUTION_OPTIONS[0];
     const dpr = window.devicePixelRatio || 1;
     let pr = Math.min(dpr, this.preset.pixelRatioCap);
-    if (res.h > 0) pr = Math.min(1.5, res.h / h);
+    if (this.mobile) {
+      // celular: telas têm dpr 2–3 (CSS px pequenos): mira uma ALTURA de renderização por qualidade, sem passar do dpr
+      const target = res.h > 0 ? res.h : this.preset.mobileHeight;
+      pr = Math.max(0.6, Math.min(dpr, target / h));
+    } else if (res.h > 0) pr = Math.min(1.5, res.h / h);
     this._pixelRatio = pr;
     this.renderer.setPixelRatio(pr);
     this.renderer.setSize(w, h, false);

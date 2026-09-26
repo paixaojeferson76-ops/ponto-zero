@@ -25,6 +25,24 @@ export class PlayerController extends Combatant {
   }
 
   /**
+   * Olhar por toque: `px` são pixels de arrasto; `degPerPx` já inclui a sensibilidade de toque.
+   * Na mira (ADS) a velocidade cai como no mouse (multiplicador ao mirar).
+   */
+  applyLookTouch(dx, dy, degPerPx) {
+    if (!this.alive || (dx === 0 && dy === 0)) return;
+    const s = this.lookSettings;
+    let k = degPerPx;
+    const def = this.weapons.def;
+    if (def && def.ads && this.weapons.adsAmount > 0) {
+      k *= lerp(1, s.aimMultiplier * def.ads.fovMul, this.weapons.adsAmount);
+    }
+    this.view.yaw -= dx * k * DEG;
+    const sign = s.invertY ? -1 : 1;
+    this.view.pitch -= dy * k * DEG * sign;
+    this.view.pitch = clamp(this.view.pitch, CAMERA.MIN_PITCH * DEG, CAMERA.MAX_PITCH * DEG);
+  }
+
+  /**
    * Copia um snapshot de entrada para o cmd do próximo tick. Campos de borda são OR-ados para
    * que um clique curto entre dois ticks não se perca.
    */

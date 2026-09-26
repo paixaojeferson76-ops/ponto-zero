@@ -16,6 +16,8 @@ import { MaterialLibrary } from '../Render/Materials.js';
 import { SceneManager } from '../Render/SceneManager.js';
 import { ViewModel } from '../Render/ViewModel.js';
 import { Input } from '../Systems/Input.js';
+import { TouchControls, detectTouchMode } from '../Systems/TouchControls.js';
+import { ASSIST, computeAssist } from '../Player/AimAssist.js';
 import { DebugOverlay } from '../UI/DebugOverlay.js';
 import { HUD } from '../UI/HUD.js';
 import { Menus } from '../UI/Menus.js';
@@ -27,6 +29,7 @@ import { createGame } from './MatchSetup.js';
 
 const $ = (id) => document.getElementById(id);
 const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
+const TOUCH_DEG_PER_PX = 0.16;   // graus por pixel de arrasto na sensibilidade 1.0
 const REASONS = {
   eliminated: 'Todos os adversários foram eliminados',
   time: 'Tempo esgotado',
@@ -38,6 +41,17 @@ export class Game {
   constructor(query) {
     this.query = query;
     this.settings = new Settings();
+    this.isTouch = detectTouchMode(query);
+    if (this.isTouch) {
+      document.body.classList.add('touch');
+      // primeira vez no celular: padrões leves e mais fáceis (mira por toque é mais difícil)
+      if (this.settings.firstRun) {
+        this.settings.update((d) => {
+          d.video.quality = 'LOW'; d.video.showFps = false;
+          d.gameplay.difficulty = 'EASY'; d.gameplay.headBobAmount = 0.5; d.gameplay.cameraEffects = 0.6;
+        });
+      }
+    }
     this.state = 'loading';
     this.session = null;
     this.match = null;
@@ -68,7 +82,7 @@ export class Game {
     menusLoading(0.05, 'Iniciando renderizador…');
     await nextFrame();
     const s = this.settings;
-    this.sm = new SceneManager(canvas, s.data.video);
+    this.sm = new SceneManager(canvas, s.data.video, { mobile: this.isTouch });
     menusLoading(0.2, 'Gerando texturas…');
     await nextFrame();
     this.materials = new MaterialLibrary(Math.min(8, this.sm.renderer.capabilities.getMaxAnisotropy()));
@@ -85,7 +99,14 @@ export class Game {
     menusLoading(0.85, 'Preparando interface e áudio…');
     await nextFrame();
 
-    this.input = new Input(canvas, () => this.settings.data.controls);
+    if (this.isTouch) {
+      this.touch = new TouchControls($('touch-ui'));
+      this.touch.setScale(s.data.touch.buttonScale);
+      this.touch.onPause = () => this.pause();
+      this.touch.onScoreboard = (down) => { if (this.session) this.scoreboard.show(down); };
+      this.touch.onLoadout = () => this._onAction('loadout', true);
+    }
+    this.input = new Input(canvas, () => this.settings.data.controls, this.touch || null);
     this.input.rawInput = s.data.mouse.rawInput;
     this.input.onLockChange = (locked) => this._onLockChange(locked);
     this.input.onAction = (a, down) => this._onAction(a, down);
@@ -96,6 +117,7 @@ export class Game {
     this.debug = new DebugOverlay($('debug'));
     this.debugDraw = new DebugDraw(this.sm.scene);
     this.viewModel = new ViewModel(this.sm);
+    if (this.isTouch) this.viewModel.sizeMul = 0.82;
     this.camera = new PlayerCamera();
     this.effects = new Effects(this.sm, (shooter, out) => this._muzzleWorld(shooter, out));
     this.menus = new Menus(s, {
@@ -109,6 +131,7 @@ export class Game {
       onUiSound: (n) => { this.audio.init().then(() => { this.audio.ui(n, 0.5); if (this.state === 'menu') this.audio.startMusic(); }); },
     });
     s.onChange(() => {});
+    this._bindAutoPause();
     canvas.addEventListener('click', () => { if (this.state === 'paused-lock') this.resume(); });
     $('click-to-play').addEventListener('click', () => this.resume());
 
@@ -182,6 +205,7 @@ export class Game {
     this.audio.stopMusic();
     if (this.settings.data.video.fullscreen) this._tryFullscreen();
     this.input.enabled = true;
+    if (this.isTouch) this._mobileSetup();
     if (lockPointer && !this.query.get('nolock')) {
       this.state = 'paused-lock';
       const ok = await this.input.lock();
@@ -196,6 +220,7 @@ export class Game {
 
   _enterPlaying() {
     this.state = 'playing';
+    if (this.touch) this.touch.setActive(true);
     this.menus.hideAll();
     $('click-to-play').classList.add('hidden');
     this.input.clearState();
@@ -231,6 +256,7 @@ export class Game {
 
   pause() {
     if (this.state !== 'playing') return;
+    if (this.touch) this.touch.setActive(false);
     this.state = 'paused';
     this.menus.showPause();
     this.scoreboard.show(false);
@@ -241,7 +267,7 @@ export class Game {
     this.menus.hideAll();
     this.input.clearState();
     this.input.lock().then((ok) => {
-      if (ok || this.query.get('nolock')) this._enterPlaying();
+      if (ok || this.query.get('nolock') || this.isTouch) this._enterPlaying();
       else this._showClickToPlay();
     });
   }
@@ -252,6 +278,27 @@ export class Game {
       return;
     }
     if (this.state === 'playing') this.pause();
+  }
+
+  /** Celular: tela cheia + paisagem + tela sempre ligada (melhor esforço; cada navegador decide). */
+  _mobileSetup() {
+    this._tryFullscreen();
+    try {
+      if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
+    } catch { /* ignorado */ }
+    try {
+      if (navigator.wakeLock && navigator.wakeLock.request) navigator.wakeLock.request('screen').catch(() => {});
+    } catch { /* ignorado */ }
+  }
+
+  /** Pausa sozinho se a aba for para segundo plano ou o celular ficar em pé (retrato). */
+  _bindAutoPause() {
+    document.addEventListener('visibilitychange', () => { if (document.hidden && this.state === 'playing') this.pause(); });
+    if (this.isTouch && window.matchMedia) {
+      const mq = matchMedia('(orientation: portrait)');
+      const onChange = () => { if (mq.matches && this.state === 'playing') this.pause(); };
+      if (mq.addEventListener) mq.addEventListener('change', onChange); else mq.addListener(onChange);
+    }
   }
 
   _tryFullscreen() {
@@ -306,6 +353,7 @@ export class Game {
     }
     if (section === 'mouse' || key === null) { this._applyLookSettings(); this.input.rawInput = s.mouse.rawInput; }
     if (section === 'audio' || key === null) this.audio.setVolumes(s.audio);
+    if ((section === 'touch' || key === null) && this.touch) this.touch.setScale(s.touch.buttonScale);
     if (section === 'crosshair' || key === null) this.hud.crosshair.applySettings(s.crosshair);
   }
 
@@ -557,8 +605,11 @@ export class Game {
 
     if (playing) {
       this.input.takeLook(this.look);
-      if (player.alive) player.applyLook(this.look.dx, this.look.dy);
       this.input.snapshot(this.snap);
+      if (player.alive) {
+        player.applyLook(this.look.dx, this.look.dy);
+        if (this.isTouch) this._touchLook(dt);
+      }
       if (player.alive) player.applyInput(this.snap);
       else if (this.snap.fire && !this._fireWasDown) this._cycleSpectate(1);
       this._fireWasDown = !!this.snap.fire;
@@ -636,6 +687,10 @@ export class Game {
 
     this.sm.render(pose, dt, this.viewModel.root.visible);
     this._updateWaypoints(pose);
+    if (this.touch) {
+      this.touch.setUse(this.hud.interactShow, this.hud.useLabel);
+      this.touch.setLoadout(match.isFreeze && this.state === 'playing');
+    }
   }
 
   _updateWaypoints(pose) {
@@ -657,6 +712,21 @@ export class Game {
     }
     if (b.planted && !b.defused && active) show('bomb', 'CARGA', 'bomb', b.x, b.y + 0.9, b.z);
     else hud.setWaypoint('bomb', '', 'bomb', null);
+  }
+
+  /** Olhar por toque + assistência de mira (só enquanto atira/mira). */
+  _touchLook(dt) {
+    const t = this.settings.data.touch;
+    const p = this.player;
+    p.applyLookTouch(this.look.tdx, this.look.tdy, TOUCH_DEG_PER_PX * t.sensitivity);
+    if (t.aimAssist > 0 && (this.snap.fire || this.snap.alt)) {
+      const a = computeAssist(p, this.session);
+      if (a) {
+        const k = t.aimAssist * a.weight * (1 - Math.exp(-ASSIST.RATE * dt));
+        p.view.yaw += a.dyaw * k;
+        p.view.pitch = Math.max(-1.5, Math.min(1.5, p.view.pitch + a.dpitch * k));
+      }
+    }
   }
 
   _pickSpectate() {

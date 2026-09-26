@@ -7,19 +7,19 @@ export const QUALITY_PRESETS = {
     shadows: false, shadowMapSize: 512, shadowRadius: 25,
     pixelRatioCap: 0.85, antialias: false,
     maxDecals: 24, maxTracers: 16, maxParticles: 60,
-    fogFar: 90, drawDistance: 110, muzzleLights: false, floorAO: false,
+    fogFar: 90, drawDistance: 110, muzzleLights: false, floorAO: false, mobileHeight: 540,
   },
   MEDIUM: {
     shadows: true, shadowMapSize: 1024, shadowRadius: 32,
     pixelRatioCap: 1.0, antialias: true,
     maxDecals: 64, maxTracers: 32, maxParticles: 160,
-    fogFar: 130, drawDistance: 160, muzzleLights: true, floorAO: true,
+    fogFar: 130, drawDistance: 160, muzzleLights: true, floorAO: true, mobileHeight: 720,
   },
   HIGH: {
     shadows: true, shadowMapSize: 2048, shadowRadius: 40,
     pixelRatioCap: 1.25, antialias: true,
     maxDecals: 128, maxTracers: 64, maxParticles: 320,
-    fogFar: 170, drawDistance: 220, muzzleLights: true, floorAO: true,
+    fogFar: 170, drawDistance: 220, muzzleLights: true, floorAO: true, mobileHeight: 900,
   },
 };
 

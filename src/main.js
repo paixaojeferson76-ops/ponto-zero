@@ -7,9 +7,6 @@ function unsupportedReason() {
   let gl2 = null;
   try { gl2 = probe.getContext('webgl2'); } catch { gl2 = null; }
   if (!gl2) return 'Seu navegador ou placa de vídeo não suporta WebGL 2. Tente o Chrome ou o Edge atualizados (e ative a aceleração de hardware).';
-  const coarse = window.matchMedia && matchMedia('(pointer: coarse)').matches;
-  const fine = window.matchMedia && matchMedia('(pointer: fine)').matches;
-  if (coarse && !fine) return 'Este jogo precisa de teclado e mouse. Abra o link em um computador (Chrome ou Edge).';
   return null;
 }
 

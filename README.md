@@ -10,9 +10,31 @@ Roda 100 % no seu navegador (local ou pelo link online) — sem servidor de jogo
 ## Jogar online
 
 **https://paixaojeferson76-ops.github.io/ponto-zero/** — abre direto no navegador, sem instalar nada.
-Precisa de um **computador com teclado e mouse** e do **Chrome ou Edge** atuais (Firefox costuma funcionar; celular/tablet não).
+Funciona no **PC (teclado e mouse)** e no **celular (toque)** — Chrome ou Edge atuais recomendados.
 O site é publicado automaticamente pelo GitHub Pages a cada `git push` na branch `main` — só depois de os testes da simulação passarem
 (veja [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)). As configurações de cada pessoa ficam salvas no próprio navegador dela.
+
+## Jogar no celular
+
+Abra o mesmo link no celular e toque em **JOGAR** (gire para o modo **paisagem**; o jogo pausa sozinho se ficar em pé).
+Os controles de toque seguem o estilo dos FPS mobile:
+
+| Toque | Ação |
+|---|---|
+| **Joystick** (metade esquerda, aparece onde você toca) | mover — empurre até o fim para **correr** |
+| **Arrastar** (metade direita) | olhar |
+| **TIRO** | atirar (arraste o dedo sobre ele para mirar e atirar ao mesmo tempo) |
+| **MIRAR** | zoom/ADS (segurar) |
+| **PULAR** · **AGACHAR** | tocar (agachar liga/desliga) |
+| **RECAR.** · **ARMA** · **GRANADA** | recarregar · trocar de arma · arremessar a granada escolhida |
+| Ícones **1 2 3** e **FRAG CEGA FUMA** (embaixo) | tocar para escolher arma/granada |
+| **USAR** (aparece perto do sítio/da carga) | segurar para plantar/desarmar |
+| **PLACAR** · **EQUIP.** · **⏸** | placar (segurar) · arma primária na preparação · pausa |
+
+Na primeira vez no celular o jogo já vem com qualidade **baixa** e bots **fáceis** (mudam em Configurações). A aba **Toque** ajusta
+sensibilidade, **assistência de mira** (puxa a mira de leve para o inimigo enquanto você atira) e tamanho dos botões. Se ficar pesado,
+reduza a **resolução de renderização** em Vídeo. No Android o jogo pede tela cheia e paisagem; no iPhone não existe tela cheia no Safari —
+use *Compartilhar → Adicionar à Tela de Início* para abrir sem as barras.
 
 ## Como executar (local)
 
@@ -110,6 +132,7 @@ recoil e spread, estado da partida e **estado de cada bot** (alvo, plano, caminh
 npm test               # ~130 testes da simulação (Node, sem navegador): física, armas, recoil, mapa, IA, partida
 npm install            # 1× — só para os testes E2E (puppeteer-core)
 npm run test:e2e       # abre o jogo no Chrome (headless) e joga: movimento, tiro, recarga, bots, plantar, morte, menus, qualidade…
+npm run test:touch     # emula um celular (844×390, multitoque): joystick, arrastar, botões, plantar, pausa, retrato
 npm run test:lock      # abre uma janela REAL do Chrome: pointer lock, mouse look, pausa por ESC e FPS medido
 ```
 
@@ -168,5 +191,6 @@ O mouse é aplicado **por frame** (sem input lag) e a câmera interpola entre pa
 * Bots usam granada de fragmentação, mas não cegante/fumaça. Sem economia/compra (só escolha de arma primária), sem troca de lados.
 * Áudio 100 % sintetizado (soa "arcade"); para som de estúdio, troque os `AudioBuffer` do `SoundBank` por arquivos livres e registre a licença em `Assets/`.
 * Sem gamepad. O remapeamento de teclas ainda não tem interface (a estrutura existe).
+* Celular: validado por **emulação** (Android/Chrome, multitoque) — o desempenho em cada aparelho depende da GPU dele; iPhone/Safari não foi testado em aparelho real.
 
 Licenças de terceiros: [`Assets/README.md`](Assets/README.md) (three.js, MIT).

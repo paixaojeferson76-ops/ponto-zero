@@ -48,6 +48,12 @@ const SCHEMA = [
   ] },
 ];
 
+const TOUCH_SECTION = { id: 'touch', label: 'TOQUE', rows: [
+  { k: 'sensitivity', label: 'Sensibilidade ao arrastar', type: 'range', min: 0.3, max: 3, step: 0.05, fmt: (v) => `${v.toFixed(2)}×` },
+  { k: 'aimAssist', label: 'Assistência de mira', type: 'range', min: 0, max: 1, step: 0.05, fmt: (v) => (v === 0 ? 'Desligada' : `${Math.round(v * 100)}%`), note: 'Puxa levemente a mira para o inimigo enquanto você atira.' },
+  { k: 'buttonScale', label: 'Tamanho dos botões', type: 'range', min: 0.7, max: 1.5, step: 0.05, fmt: (v) => `${Math.round(v * 100)}%` },
+] };
+
 const SCREENS = ['loading', 'menu-main', 'menu-pause', 'menu-settings', 'menu-controls', 'menu-loadout', 'menu-end'];
 
 export class Menus {
@@ -137,6 +143,11 @@ export class Menus {
 
   // ------------------------------------------------------------------ configurações
 
+  /** Abas visíveis: a de toque só aparece no celular. */
+  _schema() {
+    return document.body.classList.contains('touch') ? [...SCHEMA, TOUCH_SECTION] : SCHEMA;
+  }
+
   showSettings(from) {
     this.returnTo = from;
     this.show('menu-settings');
@@ -149,14 +160,14 @@ export class Menus {
     root.innerHTML = '';
     const panel = document.createElement('div');
     panel.className = 'panel settings';
-    panel.innerHTML = `<h2>CONFIGURAÇÕES</h2><div class="tabs">${SCHEMA.map((t) => `<div class="tab ${t.id === this.tab ? 'active' : ''}" data-tab="${t.id}">${t.label}</div>`).join('')}</div><div id="set-body"></div>
+    panel.innerHTML = `<h2>CONFIGURAÇÕES</h2><div class="tabs">${this._schema().map((t) => `<div class="tab ${t.id === this.tab ? 'active' : ''}" data-tab="${t.id}">${t.label}</div>`).join('')}</div><div id="set-body"></div>
       <div class="foot"><button class="btn small" id="set-reset">RESTAURAR ESTA ABA</button><button class="btn small primary" id="set-back">VOLTAR</button></div>`;
     root.appendChild(panel);
     panel.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => { this.tab = t.dataset.tab; this._renderSettings(); }));
     panel.querySelector('#set-back').onclick = () => { this.cb.onUiSound && this.cb.onUiSound('ui_click'); this.show(this.returnTo); };
     panel.querySelector('#set-reset').onclick = () => { this.settings.reset(this.tab); this.cb.onSettingsChanged(this.tab, null); this._renderSettings(); };
 
-    const section = SCHEMA.find((t) => t.id === this.tab);
+    const section = this._schema().find((t) => t.id === this.tab) || SCHEMA[0];
     const body = panel.querySelector('#set-body');
     let preview = null;
     if (section.preview) {
@@ -222,10 +233,27 @@ export class Menus {
   showControls(from) {
     this.returnTo = from;
     const root = $('menu-controls');
+    if (document.body.classList.contains('touch')) {
+      const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
+      root.innerHTML = `<div class="panel settings"><h2>CONTROLES (TOQUE)</h2><table class="keys">
+        ${row('Lado esquerdo', 'joystick: <b>mover</b> (empurre até o fim para <b>correr</b>)')}
+        ${row('Lado direito', 'arraste para <b>olhar</b>')}
+        ${row('TIRO', 'segure para atirar — arraste o dedo em cima dele para mirar e atirar juntos')}
+        ${row('MIRAR', 'segure para dar zoom (mais preciso, mais lento)')}
+        ${row('PULAR · AGACHAR', 'toque (agachar liga/desliga)')}
+        ${row('RECAR. · ARMA · GRANADA', 'recarrega · troca de arma · joga a granada escolhida')}
+        ${row('Ícones embaixo', 'toque em <b>1 / 2 / 3</b> para a arma e em <b>FRAG / CEGA / FUMA</b> para a granada')}
+        ${row('USAR', 'aparece perto do sítio (plantar) ou da carga (desarmar): segure')}
+        ${row('PLACAR · EQUIP.', 'segure para ver o placar · escolha a arma na preparação')}
+      </table><div class="foot"><span></span><button class="btn small primary" id="ctl-back">VOLTAR</button></div></div>`;
+      root.querySelector('#ctl-back').onclick = () => { this.cb.onUiSound && this.cb.onUiSound('ui_click'); this.show(this.returnTo); };
+      this.show('menu-controls');
+      return;
+    }
     const b = this.settings.data.controls;
     const rows = Object.entries(ACTION_LABELS).filter(([k]) => b[k]).map(([k, label]) => `<tr><td>${label}</td><td>${b[k].map((c) => `<kbd>${prettyKey(c)}</kbd>`).join('')}</td></tr>`).join('');
     root.innerHTML = `<div class="panel settings"><h2>CONTROLES</h2><table class="keys">${rows}<tr><td>Pausar / menu</td><td><kbd>Esc</kbd></td></tr><tr><td>Roda do mouse</td><td>trocar de arma</td></tr></table>
-      <div class="set-note">Os atalhos são lidos de uma tabela de ações — pronto para remapeamento futuro. Dica: Ctrl+W fecha a aba do navegador; use <kbd>C</kbd> para agachar sem risco.</div>
+      <div class="set-note touch-hide">Os atalhos são lidos de uma tabela de ações — pronto para remapeamento futuro. Dica: Ctrl+W fecha a aba do navegador; use <kbd>C</kbd> para agachar sem risco.</div>
       <div class="foot"><span></span><button class="btn small primary" id="ctl-back">VOLTAR</button></div></div>`;
     root.querySelector('#ctl-back').onclick = () => { this.cb.onUiSound && this.cb.onUiSound('ui_click'); this.show(this.returnTo); };
     this.show('menu-controls');

@@ -9,8 +9,9 @@ export class Input {
    * @param {HTMLElement} canvas elemento que recebe o pointer lock
    * @param {() => Record<string,string[]>} getBindings
    */
-  constructor(canvas, getBindings = () => DEFAULT_BINDINGS) {
+  constructor(canvas, getBindings = () => DEFAULT_BINDINGS, touch = null) {
     this.canvas = canvas;
+    this.touch = touch;           // TouchControls (celular) ou null
     this.getBindings = getBindings;
     this.held = new Set();
     this.pressed = new Set();       // bordas desde o último snapshot
@@ -51,8 +52,8 @@ export class Input {
     });
     document.addEventListener('pointerlockerror', () => { this.lockFailedAt = performance.now(); });
     window.addEventListener('beforeunload', (e) => {
-      // Ctrl+W (fechar) acidental durante a partida pede confirmação.
-      if (this.enabled) { e.preventDefault(); e.returnValue = ''; }
+      // Ctrl+W (fechar) acidental durante a partida pede confirmação (só no PC).
+      if (this.enabled && !this.touch) { e.preventDefault(); e.returnValue = ''; }
     });
   }
 
@@ -108,6 +109,11 @@ export class Input {
   }
 
   async lock() {
+    if (this.touch) {            // celular: não existe pointer lock — os toques já são a entrada
+      this.locked = true;
+      this.touch.setActive(true);
+      return true;
+    }
     if (this.locked) return true;
     try {
       const p = this.canvas.requestPointerLock({ unadjustedMovement: this.rawInput });
@@ -122,6 +128,7 @@ export class Input {
   }
 
   unlock() {
+    if (this.touch) { this.locked = false; this.touch.setActive(false); return; }
     if (document.pointerLockElement) document.exitPointerLock();
   }
 
@@ -131,6 +138,9 @@ export class Input {
     out.dy = this.mouseDY;
     this.mouseDX = 0;
     this.mouseDY = 0;
+    out.tdx = 0;
+    out.tdy = 0;
+    if (this.touch) this.touch.takeLook(out);
     return out;
   }
 
@@ -155,6 +165,7 @@ export class Input {
     out.throwGrenade = this.wasPressed('throwGrenade') ? 'selected' : null;
     out.switchDelta = this.wheel;
     out.quickSwitch = this.pressed.has('KeyQ');
+    if (this.touch && this.touch.active) this.touch.mergeInto(out);
     this.wheel = 0;
     this.fireLatch = false;
     this.pressed.clear();
@@ -162,6 +173,7 @@ export class Input {
   }
 
   clearState() {
+    if (this.touch) this.touch.releaseAll();
     this.held.clear();
     this.pressed.clear();
     this.mouseDX = this.mouseDY = this.wheel = 0;

@@ -1,0 +1,29 @@
+{
+  "name": "ponto-zero",
+  "version": "0.1.0",
+  "description": "PONTO ZERO — FPS tático local (protótipo jogável). Three.js + ES Modules.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "start": "node server/serve.mjs --open",
+    "serve": "node server/serve.mjs",
+    "test": "node --test \"Tests/**/*.test.js\"",
+    "test:e2e": "node Tests/e2e/smoke.mjs --gpu && node Tests/e2e/flow.mjs --gpu",
+    "test:lock": "node Tests/e2e/lock.mjs",
+    "vendor": "node tools/vendor.mjs",
+    "build": "node tools/build-site.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.0.0",
+    "three": "^0.186.1"
+  },
+  "homepage": "https://paixaojeferson76-ops.github.io/ponto-zero/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paixaojeferson76-ops/ponto-zero.git"
+  }
+}

@@ -1,0 +1,5 @@
+node_modules/
+.chrome-profile/
+Tests/e2e/out/
+*.log
+_site/

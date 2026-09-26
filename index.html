@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PONTO ZERO — FPS tático</title>
+  <meta name="description" content="FPS tático original para jogar no navegador: Ataque × Defesa 5×5 contra bots, com recoil, granadas, IA e mapa próprio. Precisa de teclado e mouse (PC).">
+  <meta name="theme-color" content="#0a0e13">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:title" content="PONTO ZERO — FPS tático no navegador">
+  <meta property="og:description" content="Ataque × Defesa 5×5 contra bots. Plante a carga, controle o recoil, use granadas. Grátis, direto no navegador (PC).">
+  <meta property="og:url" content="https://paixaojeferson76-ops.github.io/ponto-zero/">
+  <meta property="og:image" content="https://paixaojeferson76-ops.github.io/ponto-zero/Assets/preview.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23101418'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%237dffb6' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%237dffb6'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="src/UI/styles.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/three.module.js" } }
+  </script>
+</head>
+<body>
+  <canvas id="game" tabindex="-1"></canvas>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="fps" class="fps"></div>
+
+    <div id="topbar">
+      <div class="team-score attack"><span class="team-name">ATACANTES</span><span id="score-attack" class="score">0</span><span id="alive-attack" class="alive"></span></div>
+      <div id="clock-box"><div id="clock">0:00</div><div id="round-label">ROUND 1</div></div>
+      <div class="team-score defend"><span id="score-defend" class="score">0</span><span class="team-name">DEFENSORES</span><span id="alive-defend" class="alive"></span></div>
+    </div>
+
+    <div id="objective"></div>
+    <div id="waypoints"></div>
+    <div id="killfeed"></div>
+    <div id="teammates"></div>
+
+    <div id="announce"></div>
+    <div id="interact"><div id="interact-text"></div><div id="interact-bar"><i></i></div></div>
+
+    <div id="crosshair" class="crosshair"></div>
+    <div id="hitmarker"></div>
+    <div id="dmg-indicators"></div>
+    <div id="vignette-damage"></div>
+    <div id="vignette-low"></div>
+    <div id="overlay-flash"></div>
+    <div id="overlay-smoke"></div>
+
+    <div id="vitals">
+      <div class="vital hp"><span class="lbl">VIDA</span><span id="hp-num" class="num">100</span><div class="bar"><i id="hp-bar"></i></div></div>
+      <div class="vital ar"><span class="lbl">COLETE</span><span id="ar-num" class="num">100</span><div class="bar"><i id="ar-bar"></i></div></div>
+    </div>
+    <div id="weapon-box">
+      <div id="weapon-name">—</div>
+      <div id="ammo"><span id="ammo-mag">0</span><span class="sep">/</span><span id="ammo-reserve">0</span></div>
+      <div id="reload-bar"><i></i></div>
+      <div id="grenades"></div>
+      <div id="slots"></div>
+    </div>
+
+    <div id="death-panel" class="hidden">
+      <div class="dp-title">VOCÊ FOI ELIMINADO</div>
+      <div id="dp-killer"></div>
+      <div id="dp-detail"></div>
+      <div id="dp-spectate"></div>
+    </div>
+    <div id="loadout-hint"></div>
+  </div>
+
+  <div id="scoreboard" class="hidden"></div>
+  <div id="debug" class="hidden"></div>
+
+  <!-- Menus -->
+  <div id="loading" class="screen">
+    <div class="brand">PONTO<span>ZERO</span></div>
+    <div id="loading-bar"><i></i></div>
+    <div id="loading-text">Carregando…</div>
+  </div>
+
+  <div id="menu-main" class="screen hidden">
+    <div class="brand big">PONTO<span>ZERO</span></div>
+    <div class="tagline">FPS tático · protótipo local</div>
+    <div class="menu-col">
+      <button id="btn-play" class="btn primary">JOGAR</button>
+      <button id="btn-settings" class="btn">CONFIGURAÇÕES</button>
+      <button id="btn-controls" class="btn">CONTROLES</button>
+    </div>
+    <div class="menu-opts">
+      <label>Lado
+        <select id="opt-side"><option value="attack">Atacante</option><option value="defend">Defensor</option></select>
+      </label>
+      <label>Bots
+        <select id="opt-diff"><option value="EASY">Fácil</option><option value="NORMAL" selected>Normal</option><option value="HARD">Difícil</option></select>
+      </label>
+      <label>Jogadores por time
+        <select id="opt-size"><option>2</option><option>3</option><option>4</option><option selected>5</option></select>
+      </label>
+    </div>
+    <div class="footer-note">Sem multiplayer · tudo roda localmente</div>
+  </div>
+
+  <div id="menu-pause" class="screen hidden">
+    <div class="panel">
+      <h2>PAUSADO</h2>
+      <div class="menu-col">
+        <button id="btn-resume" class="btn primary">CONTINUAR</button>
+        <button id="btn-pause-settings" class="btn">CONFIGURAÇÕES</button>
+        <button id="btn-pause-controls" class="btn">CONTROLES</button>
+        <button id="btn-restart" class="btn">REINICIAR PARTIDA</button>
+        <button id="btn-quit" class="btn">MENU PRINCIPAL</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="menu-settings" class="screen hidden"></div>
+  <div id="menu-controls" class="screen hidden"></div>
+  <div id="menu-loadout" class="screen hidden"></div>
+
+  <div id="menu-end" class="screen hidden">
+    <div class="panel">
+      <h2 id="end-title">FIM DE PARTIDA</h2>
+      <div id="end-score"></div>
+      <div class="menu-col">
+        <button id="btn-again" class="btn primary">JOGAR NOVAMENTE</button>
+        <button id="btn-end-menu" class="btn">MENU PRINCIPAL</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="click-to-play" class="hidden"><div>Clique para retomar o controle do mouse</div></div>
+  <div id="fatal" class="hidden"></div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

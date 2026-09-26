@@ -33,7 +33,7 @@ const SCHEMA = [
     { k: 'headBob', label: 'Balanço da câmera ao andar (head bob)', type: 'bool' },
     { k: 'headBobAmount', label: 'Intensidade do head bob', type: 'range', min: 0, max: 1.5, step: 0.05, fmt: (v) => `${Math.round(v * 100)}%` },
     { k: 'cameraEffects', label: 'Efeitos de câmera (inclinação, coice, pouso)', type: 'range', min: 0, max: 1, step: 0.05, fmt: (v) => `${Math.round(v * 100)}%` },
-    { k: 'difficulty', label: 'Dificuldade dos bots', type: 'select', options: [['EASY', 'Fácil'], ['NORMAL', 'Normal'], ['HARD', 'Difícil']], note: 'Vale a partir da próxima partida.' },
+    { k: 'difficulty', label: 'Dificuldade dos bots', type: 'select', options: [['CASUAL', 'Muito fácil'], ['EASY', 'Fácil'], ['NORMAL', 'Normal'], ['HARD', 'Difícil']], note: 'Vale a partir da próxima partida.' },
     { k: 'roundsToWin', label: 'Rounds para vencer', type: 'range', min: 1, max: 15, step: 1, fmt: (v) => String(v), note: 'Vale a partir da próxima partida.' },
   ] },
   { id: 'crosshair', label: 'CROSSHAIR', preview: true, rows: [
@@ -51,7 +51,8 @@ const SCHEMA = [
 
 const TOUCH_SECTION = { id: 'touch', label: 'TOQUE', rows: [
   { k: 'sensitivity', label: 'Sensibilidade ao arrastar', type: 'range', min: 0.3, max: 3, step: 0.05, fmt: (v) => `${v.toFixed(2)}×` },
-  { k: 'aimAssist', label: 'Assistência de mira', type: 'range', min: 0, max: 1, step: 0.05, fmt: (v) => (v === 0 ? 'Desligada' : `${Math.round(v * 100)}%`), note: 'Puxa levemente a mira para o inimigo enquanto você atira.' },
+  { k: 'stickyAim', label: 'Mira grudada no inimigo', type: 'range', min: 0, max: 1, step: 0.05, fmt: (v) => (v === 0 ? 'Desligada' : `${Math.round(v * 100)}%`), note: 'Ao atirar ou mirar, a mira encaixa no inimigo e o acompanha. Arraste rápido para soltar.' },
+  { k: 'autoFire', label: 'Atirar sozinho ao mirar', type: 'bool', note: 'Segure MIRAR: quando a mira está em cima do inimigo, o tiro sai automaticamente.' },
   { k: 'buttonScale', label: 'Tamanho dos botões', type: 'range', min: 0.7, max: 1.5, step: 0.05, fmt: (v) => `${Math.round(v * 100)}%` },
 ] };
 
@@ -250,7 +251,7 @@ export class Menus {
         ${row('Lado esquerdo', 'joystick: <b>mover</b> (empurre até o fim para <b>correr</b>)')}
         ${row('Lado direito', 'arraste para <b>olhar</b>')}
         ${row('TIRO', 'segure para atirar — arraste o dedo em cima dele para mirar e atirar juntos')}
-        ${row('MIRAR', 'segure para dar zoom (mais preciso, mais lento)')}
+        ${row('MIRAR', 'segure para dar zoom — a mira gruda no inimigo perto do centro e, alinhada, atira sozinha')}
         ${row('PULAR · AGACHAR', 'toque (agachar liga/desliga)')}
         ${row('RECAR. · ARMA · GRANADA', 'recarrega · troca de arma · joga a granada escolhida')}
         ${row('Ícones embaixo', 'toque em <b>1 / 2 / 3</b> para a arma e em <b>FRAG / CEGA / FUMA</b> para a granada')}

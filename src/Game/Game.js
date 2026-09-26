@@ -17,7 +17,7 @@ import { SceneManager } from '../Render/SceneManager.js';
 import { ViewModel } from '../Render/ViewModel.js';
 import { Input } from '../Systems/Input.js';
 import { TouchControls, detectTouchMode, readInputPref } from '../Systems/TouchControls.js';
-import { ASSIST, computeAssist } from '../Player/AimAssist.js';
+import { AimAssist } from '../Player/AimAssist.js';
 import { DebugOverlay } from '../UI/DebugOverlay.js';
 import { HUD } from '../UI/HUD.js';
 import { Menus } from '../UI/Menus.js';
@@ -44,14 +44,9 @@ export class Game {
     this.isTouch = detectTouchMode(query);
     if (this.isTouch) {
       document.body.classList.add('touch');
-      // primeira vez no celular: padrões leves e mais fáceis (mira por toque é mais difícil)
-      if (this.settings.firstRun) {
-        this.settings.update((d) => {
-          d.video.quality = 'LOW'; d.video.showFps = false;
-          d.gameplay.difficulty = 'EASY'; d.gameplay.headBobAmount = 0.5; d.gameplay.cameraEffects = 0.6;
-        });
-      }
+      this._applyTouchDefaults();
     }
+    this.aimAssist = new AimAssist();
     this.state = 'loading';
     this.session = null;
     this.match = null;
@@ -194,6 +189,7 @@ export class Game {
     this.menus.hideAll();
     this.camera.onSpawn();
     this.spectate = null;
+    this.aimAssist.reset();
     this.acc = 0;
     this.match.start();
     this.audio.startAmbience();
@@ -275,6 +271,26 @@ export class Game {
     if (this.state === 'playing') this.pause();
   }
 
+  /**
+   * Padrões do celular: primeira vez = qualidade leve e dificuldade "Muito fácil" (mirar por toque é mais difícil);
+   * quem já jogava no celular passa uma única vez para "Muito fácil" (pode voltar nas configurações).
+   */
+  _applyTouchDefaults() {
+    const s = this.settings;
+    const first = s.firstRun;
+    if (!first && s.data.touch.easyV) return;
+    s.update((d) => {
+      if (first) {
+        d.video.quality = 'LOW'; d.video.showFps = false;
+        d.gameplay.headBobAmount = 0.5; d.gameplay.cameraEffects = 0.6;
+        d.gameplay.difficulty = 'CASUAL';
+      } else if (d.gameplay.difficulty === 'EASY' || d.gameplay.difficulty === 'NORMAL') {
+        d.gameplay.difficulty = 'CASUAL';
+      }
+      d.touch.easyV = 1;
+    });
+  }
+
   /** Cria a camada de botões de toque e liga os callbacks. */
   _initTouch() {
     this.touch = new TouchControls($('touch-ui'));
@@ -306,12 +322,7 @@ export class Game {
     if (this.isTouch) return;
     this.isTouch = true;
     document.body.classList.add('touch');
-    if (this.settings.firstRun) {
-      this.settings.update((d) => {
-        d.video.quality = 'LOW'; d.video.showFps = false;
-        d.gameplay.difficulty = 'EASY'; d.gameplay.headBobAmount = 0.5; d.gameplay.cameraEffects = 0.6;
-      });
-    }
+    this._applyTouchDefaults();
     this._initTouch();
     this.input.touch = this.touch;
     this.sm.mobile = true;
@@ -725,6 +736,7 @@ export class Game {
       dt, match, session, player, pose, settings: s, target, controls: s.controls,
       fpsText: `${this.fps.toFixed(0)} FPS`, smokeAlpha,
     });
+    this.hud.crosshair.setLocked(this.isTouch && playing && player.alive && this.aimAssist.locked);
     this.scoreboard.update(dt, session, match, player);
     this.debug.update(dt, { session, player, match, renderInfo: this.sm.renderInfo, tickMs: this.tickMs, cpuMs: this.cpuMs, fps: this.fps });
 
@@ -757,18 +769,26 @@ export class Game {
     else hud.setWaypoint('bomb', '', 'bomb', null);
   }
 
-  /** Olhar por toque + assistência de mira (só enquanto atira/mira). */
+  /**
+   * Olhar por toque + mira grudada (enquanto atira/mira) + tiro automático ao mirar em cima do inimigo.
+   * Roda antes de applyInput, então pode acionar o gatilho pelo snapshot.
+   */
   _touchLook(dt) {
     const t = this.settings.data.touch;
     const p = this.player;
+    const snap = this.snap;
+    const assist = this.aimAssist;
     p.applyLookTouch(this.look.tdx, this.look.tdy, TOUCH_DEG_PER_PX * t.sensitivity);
-    if (t.aimAssist > 0 && (this.snap.fire || this.snap.alt)) {
-      const a = computeAssist(p, this.session);
-      if (a) {
-        const k = t.aimAssist * a.weight * (1 - Math.exp(-ASSIST.RATE * dt));
-        p.view.yaw += a.dyaw * k;
-        p.view.pitch = Math.max(-1.5, Math.min(1.5, p.view.pitch + a.dpitch * k));
-      }
+    AimAssist.apply(p, assist.step(p, this.session, {
+      strength: t.stickyAim, dt, active: !!(snap.fire || snap.alt),
+      lookPx: Math.hypot(this.look.tdx, this.look.tdy), time: this.session.time,
+    }));
+    p.accuracyMul = 1 - 0.55 * t.stickyAim;      // no toque a dispersão cai até 45%
+    const def = p.weapons.def;
+    if (t.autoFire && snap.alt && !snap.fire && assist.aligned && def && def.magSize > 0) {
+      // arma automática: gatilho contínuo; semiautomática: alterna a cada frame para gerar "bordas"
+      if (def.mode === 'auto') snap.fire = true;
+      else { this._autoFlip = !this._autoFlip; snap.fire = this._autoFlip; }
     }
   }
 

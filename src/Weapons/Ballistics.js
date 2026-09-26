@@ -91,7 +91,9 @@ export class Ballistics {
       if (victim) {
         const distance = travelled + best.t;
         const mult = def.hitMult ? def.hitMult[best.part] ?? 1 : 1;
-        const amount = def.damage * falloffMultiplier(def, distance) * mult * dmgMul;
+        // bots em dificuldade baixa causam menos dano (difficulty.damageMul); humano = 1
+        const shooterMul = shooter.difficulty && shooter.difficulty.damageMul !== undefined ? shooter.difficulty.damageMul : 1;
+        const amount = def.damage * falloffMultiplier(def, distance) * mult * dmgMul * shooterMul;
         endX = best.x; endY = best.y; endZ = best.z;
         endKind = 'entity';
         const result = victim.receiveDamage({

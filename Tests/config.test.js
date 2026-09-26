@@ -6,7 +6,7 @@ import { MOVEMENT, PLAYER, CAMERA, MOUSE, SIM } from '../src/Config/Tuning.js';
 import { QUALITY_LEVELS, QUALITY_PRESETS } from '../src/Config/Quality.js';
 import { DEFAULT_SETTINGS, Settings } from '../src/Config/Settings.js';
 import { SURFACES } from '../src/Config/Surfaces.js';
-import { DIFFICULTY } from '../src/AI/AIConfig.js';
+import { DIFFICULTY, getDifficulty } from '../src/AI/AIConfig.js';
 import { FORJA } from '../src/World/maps/Forja.js';
 
 const GUN_FIELDS = ['damage', 'pellets', 'hitMult', 'range', 'falloffStart', 'falloffPerMeter', 'falloffMin', 'penetration', 'armorPen',
@@ -96,6 +96,19 @@ test('dificuldades: DIFÍCIL reage mais rápido, gira mais rápido e erra menos 
   assert.ok(EASY.aimErrorMin > NORMAL.aimErrorMin && NORMAL.aimErrorMin > HARD.aimErrorMin);
 });
 
+test('dificuldades: MUITO FÁCIL é a mais branda em tudo e reduz o dano dos bots', () => {
+  const { CASUAL, EASY, NORMAL, HARD } = DIFFICULTY;
+  assert.ok(CASUAL.reaction[0] >= EASY.reaction[1], 'reage mais devagar que FÁCIL (faixas não se sobrepõem)');
+  assert.ok(CASUAL.aimTurnRate < EASY.aimTurnRate);
+  assert.ok(CASUAL.aimErrorMin > EASY.aimErrorMin && CASUAL.aimError > EASY.aimError);
+  assert.ok(CASUAL.recoilControl < EASY.recoilControl && CASUAL.headChance < EASY.headChance);
+  assert.ok(CASUAL.hearingMul < EASY.hearingMul);
+  assert.ok(CASUAL.damageMul < EASY.damageMul && EASY.damageMul < NORMAL.damageMul && NORMAL.damageMul <= HARD.damageMul);
+  assert.equal(NORMAL.damageMul, 1);
+  assert.equal(getDifficulty('CASUAL'), CASUAL);
+  assert.equal(getDifficulty('inexistente'), NORMAL, 'nome inválido cai em NORMAL');
+});
+
 test('mapa: definição tem tudo que o jogo espera (spawns, sítios, rotas, posições)', () => {
   assert.equal(FORJA.spawns.attack.length, 5);
   assert.equal(FORJA.spawns.defend.length, 5);
@@ -143,6 +156,27 @@ test('configurações: chaves novas ganham padrão ao carregar um arquivo antigo
   assert.equal(s.data.video.fov, 90);
   assert.equal(s.data.video.quality, 'MEDIUM');
   assert.ok(s.data.controls.moveForward);
+});
+
+test('configurações: mira grudada, tiro automático e "Muito fácil" (padrões, limites, arquivo antigo)', () => {
+  const s = new Settings(fakeStorage());
+  assert.equal(s.data.touch.stickyAim, 0.85);
+  assert.equal(s.data.touch.autoFire, true);
+  s.update((d) => { d.touch.stickyAim = 9; d.touch.autoFire = 0; d.gameplay.difficulty = 'CASUAL'; });
+  assert.equal(s.data.touch.stickyAim, 1);
+  assert.equal(s.data.touch.autoFire, false);
+  assert.equal(s.data.gameplay.difficulty, 'CASUAL', 'CASUAL é uma dificuldade válida');
+  s.update((d) => { d.gameplay.difficulty = 'IMPOSSIVEL'; });
+  assert.equal(s.data.gameplay.difficulty, 'NORMAL');
+
+  // arquivo salvo por uma versão anterior (tinha "aimAssist"): ganha os padrões novos e a chave velha some
+  const store = fakeStorage();
+  store.setItem('pontozero.settings.v1', JSON.stringify({ touch: { sensitivity: 1.4, aimAssist: 0.6 }, gameplay: { difficulty: 'EASY' } }));
+  const old = new Settings(store);
+  assert.equal(old.data.touch.sensitivity, 1.4);
+  assert.equal(old.data.touch.stickyAim, 0.85);
+  assert.equal('aimAssist' in old.data.touch, false);
+  assert.equal(old.data.touch.easyV, 0, 'ainda vai passar pela migração única');
 });
 
 test('configurações: restaurar seção volta aos padrões e notifica ouvintes', () => {

@@ -58,6 +58,7 @@ export class Combatant {
     this.blindTotal = 0;
     this.stepAcc = 0;
     this.useProgress = 0;           // segundos segurando "usar" (plantar/desarmar)
+    this.accuracyMul = 1;           // multiplica a dispersão dos tiros (< 1 = mais preciso; usado no modo toque)
     this._eye = [0, 0, 0];
   }
 

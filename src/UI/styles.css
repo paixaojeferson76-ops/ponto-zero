@@ -82,6 +82,8 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; color:
 .crosshair .d { width: var(--th); height: var(--th); left: calc(var(--th) / -2); top: calc(var(--th) / -2); display: none; }
 .crosshair.dot .d { display: block; }
 .crosshair.hidden-ch { visibility: hidden; }
+.crosshair .lk { display: none; left: -15px; top: -15px; width: 30px; height: 30px; box-sizing: border-box; background: transparent; border: 2px solid #ff5a4d; border-radius: 50%; box-shadow: 0 0 6px rgba(255,90,77,.7); }
+.crosshair.locked .lk { display: block; }
 
 #hitmarker { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; transform: translate(-50%, -50%); opacity: 0; }
 #hitmarker::before, #hitmarker::after { content: ""; position: absolute; left: 50%; top: 50%; width: 26px; height: 2px; background: #fff; }

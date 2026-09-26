@@ -5,9 +5,17 @@ import { DEG, damp } from '../Systems/MathUtil.js';
 export class Crosshair {
   constructor(el) {
     this.el = el;
-    el.innerHTML = '<i class="l"></i><i class="r"></i><i class="t"></i><i class="b"></i><i class="d"></i>';
+    el.innerHTML = '<i class="l"></i><i class="r"></i><i class="t"></i><i class="b"></i><i class="d"></i><i class="lk"></i>';
     this.gap = 4;
     this.settings = null;
+    this.locked = false;
+  }
+
+  /** Anel vermelho ao redor da mira enquanto a mira grudada está travada em um inimigo (modo toque). */
+  setLocked(v) {
+    if (v === this.locked) return;
+    this.locked = v;
+    this.el.classList.toggle('locked', v);
   }
 
   applySettings(cs) {

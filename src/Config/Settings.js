@@ -44,8 +44,10 @@ export const DEFAULT_SETTINGS = {
   },
   touch: {
     sensitivity: 1.0,       // velocidade de giro ao arrastar (celular)
-    aimAssist: 0.6,         // 0 = desligado … 1 = forte
+    stickyAim: 0.85,        // mira grudada no inimigo: 0 = desligada … 1 = muito forte
+    autoFire: true,         // segurando MIRAR com a mira em cima do inimigo, atira sozinho
     buttonScale: 1.0,       // tamanho dos botões na tela
+    easyV: 0,               // migração única: usuários de toque antigos passam para "Muito fácil"
   },
   controls: DEFAULT_BINDINGS,
 };
@@ -76,10 +78,11 @@ function sanitize(s) {
   s.gameplay.cameraEffects = clamp(s.gameplay.cameraEffects, 0, 1);
   s.gameplay.teamSize = clamp(Math.round(s.gameplay.teamSize), 1, 5);
   s.gameplay.roundsToWin = clamp(Math.round(s.gameplay.roundsToWin), 1, 15);
-  if (!['EASY', 'NORMAL', 'HARD'].includes(s.gameplay.difficulty)) s.gameplay.difficulty = 'NORMAL';
+  if (!['CASUAL', 'EASY', 'NORMAL', 'HARD'].includes(s.gameplay.difficulty)) s.gameplay.difficulty = 'NORMAL';
   if (!['attack', 'defend'].includes(s.gameplay.playerSide)) s.gameplay.playerSide = 'attack';
   s.touch.sensitivity = clamp(s.touch.sensitivity, 0.3, 3);
-  s.touch.aimAssist = clamp(s.touch.aimAssist, 0, 1);
+  s.touch.stickyAim = clamp(s.touch.stickyAim, 0, 1);
+  s.touch.autoFire = !!s.touch.autoFire;
   s.touch.buttonScale = clamp(s.touch.buttonScale, 0.7, 1.5);
   s.crosshair.size = clamp(s.crosshair.size, 0, 30);
   s.crosshair.thickness = clamp(s.crosshair.thickness, 1, 8);

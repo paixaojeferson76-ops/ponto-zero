@@ -50,23 +50,30 @@ export const AI = {
  * recoilControl: fração do recoil que o bot compensa  headChance: chance de mirar na cabeça
  */
 export const DIFFICULTY = {
+  // damageMul: fração do dano que os tiros deste bot causam (deixa você sobreviver mais)
+  CASUAL: {
+    label: 'MUITO FÁCIL',
+    reaction: [0.95, 1.6], aimTurnRate: 105, aimError: 6.5, aimErrorMin: 3.4, aimSettle: 2.4,
+    recoilControl: 0.05, headChance: 0.03, hearingMul: 0.5, awarenessRate: 1.0,
+    strafeChance: 0.12, burstMul: 0.6, retreatHealth: 0.5, utilityChance: 0.02, damageMul: 0.55,
+  },
   EASY: {
     label: 'FÁCIL',
     reaction: [0.55, 0.95], aimTurnRate: 170, aimError: 4.0, aimErrorMin: 1.8, aimSettle: 1.6,
     recoilControl: 0.25, headChance: 0.1, hearingMul: 0.75, awarenessRate: 1.6,
-    strafeChance: 0.35, burstMul: 0.8, retreatHealth: 0.35, utilityChance: 0.1,
+    strafeChance: 0.35, burstMul: 0.8, retreatHealth: 0.35, utilityChance: 0.1, damageMul: 0.85,
   },
   NORMAL: {
     label: 'NORMAL',
     reaction: [0.3, 0.6], aimTurnRate: 270, aimError: 2.6, aimErrorMin: 0.8, aimSettle: 1.1,
     recoilControl: 0.55, headChance: 0.25, hearingMul: 1.0, awarenessRate: 2.4,
-    strafeChance: 0.55, burstMul: 1.0, retreatHealth: 0.28, utilityChance: 0.25,
+    strafeChance: 0.55, burstMul: 1.0, retreatHealth: 0.28, utilityChance: 0.25, damageMul: 1,
   },
   HARD: {
     label: 'DIFÍCIL',
     reaction: [0.16, 0.34], aimTurnRate: 420, aimError: 1.5, aimErrorMin: 0.35, aimSettle: 0.7,
     recoilControl: 0.82, headChance: 0.4, hearingMul: 1.2, awarenessRate: 3.4,
-    strafeChance: 0.75, burstMul: 1.2, retreatHealth: 0.22, utilityChance: 0.4,
+    strafeChance: 0.75, burstMul: 1.2, retreatHealth: 0.22, utilityChance: 0.4, damageMul: 1,
   },
 };
 

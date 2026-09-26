@@ -37,7 +37,7 @@ try {
   await page.waitForFunction("window.__pz.state() === 'playing'", { timeout: 30000 });
   check('tocar em JOGAR inicia a partida (sem pointer lock)', true);
   const defaults = await ev('({ q: window.__pz.game.settings.data.video.quality, d: window.__pz.game.settings.data.gameplay.difficulty, ph: window.__pz.game.sm.renderInfo.pixelRatio })');
-  check('padrões de celular na 1ª vez (qualidade baixa, bots fáceis)', defaults.q === 'LOW' && defaults.d === 'EASY', JSON.stringify(defaults));
+  check('padrões de celular na 1ª vez (qualidade baixa, bots "Muito fácil")', defaults.q === 'LOW' && defaults.d === 'CASUAL', JSON.stringify(defaults));
   check('camada de botões visível durante a partida', await ev("!document.getElementById('touch-ui').classList.contains('hidden') && document.querySelectorAll('.tc-btn').length >= 9"));
   await ev('window.__pz.advance(6.5)');
   await sleep(600);
@@ -115,6 +115,59 @@ try {
   await ev('window.__pz.advance(2)'); await sleep(200);
   check('botão GRANADA arremessa a granada selecionada', (await ev('window.__pz.player.weapons.grenades.frag')) === 0);
 
+  // ---- mira grudada + tiro automático ao mirar (estilo COD Mobile / Free Fire)
+  await ev(`(() => {
+    const pz = window.__pz, s = pz.session, p = pz.player;
+    for (const b of s.bots) { b.think = () => {}; b.frozen = true; b.body.teleport(36, 0, 0); b.hitboxes.update(36, 0, 0, 0, false); }
+    const e = s.bots.find((b) => b.team !== p.team);
+    e.body.teleport(-10, 0, -26.7); e.hitboxes.update(-10, 0, -26.7, 0, false);
+    e.health.max = 100000; e.health.current = 100000; e.armor.current = 0;   // alvo "de treino": não morre durante o teste
+    window.__e = e; window.__hits = 0;
+    s.events.on('bulletHit', (x) => { if (x.shooter === p && x.victim === e) window.__hits++; });
+    p.health.reset(); pz.teleport(-28, -25.5, -Math.PI / 2 + 0.3);           // mira ≈ 17° fora do inimigo
+    p.weapons.requestSwitch('primary');
+  })()`);
+  await ev('window.__pz.advance(1.3)');
+  await ev('(() => { const w = window.__pz.player.weapons; w.active.ammo = w.active.def.magSize; })()');
+  const angErr = `(() => { const p = window.__pz.player, e = window.__e; const eye = p.eyeArray(), q = e.body.pos;
+    const dx = q.x - eye[0], dy = q.y + 1.35 - eye[1], dz = q.z - eye[2];
+    const yaw = Math.atan2(-dx, -dz), pitch = Math.atan2(dy, Math.hypot(dx, dz));
+    let d = yaw - p.view.yaw; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+    return Math.hypot(d * Math.cos(pitch), pitch - p.view.pitch) * 57.2958; })()`;
+  const off = await ev(angErr);
+  const ac = await center('.tc-ads');
+  const adsHold = await page.touchscreen.touchStart(ac.x, ac.y);          // só MIRAR: o dedo nunca toca em TIRO
+  await page.waitForFunction("document.querySelector('.crosshair').classList.contains('locked')", { timeout: 6000, polling: 'raf' });
+  await sleep(900);
+  const near = await ev(angErr);
+  const hits1 = await ev('window.__hits');
+  await page.screenshot({ path: join(out, 'touch_sticky.png') });
+  check('segurar MIRAR encaixa a mira no inimigo e acende o anel vermelho', off > 10 && near < 3, `${off.toFixed(1)}° → ${near.toFixed(2)}°`);
+  check('mirando alinhado, atira sozinho (acertos sem apertar TIRO)', hits1 >= 2 && (await ev('window.__pz.player.weapons.active.ammo')) < (await ev('window.__pz.player.weapons.active.def.magSize')), `${hits1} acertos`);
+  await adsHold.end(); await sleep(500);
+  const hits2 = await ev('window.__hits');
+  await sleep(400);
+  check('soltar MIRAR apaga o anel e para de atirar', !(await ev("document.querySelector('.crosshair').classList.contains('locked')")) && (await ev('window.__hits')) === hits2);
+
+  await ev('window.__pz.game.settings.update((d) => { d.touch.autoFire = false; })');
+  await ev('window.__pz.teleport(-28, -25.5, -Math.PI / 2 + 0.3)');
+  const adsHold2 = await page.touchscreen.touchStart(ac.x, ac.y);
+  await sleep(900);
+  const grudou = await ev(angErr), hits3 = await ev('window.__hits');
+  await adsHold2.end(); await sleep(200);
+  check('com "Atirar sozinho" desligado a mira gruda, mas não dispara', grudou < 3 && hits3 === hits2, `${grudou.toFixed(2)}°, +${hits3 - hits2} acertos`);
+  await ev('window.__pz.game.settings.update((d) => { d.touch.autoFire = true; d.touch.stickyAim = 0; })');
+  await ev('window.__pz.teleport(-28, -25.5, -Math.PI / 2 + 0.3)');
+  const adsHold3 = await page.touchscreen.touchStart(ac.x, ac.y);
+  await sleep(700);
+  const solta = await ev(angErr), hits4 = await ev('window.__hits');
+  await adsHold3.end(); await sleep(200);
+  check('com a mira grudada em 0% nada é puxado nem disparado sozinho', solta > 10 && hits4 === hits3, `${solta.toFixed(1)}° fora`);
+  await ev('window.__pz.game.settings.update((d) => { d.touch.stickyAim = 0.85; })');
+  await ev(`(() => { const e = window.__e; e.health.max = 100; e.health.current = 100; e.body.teleport(36, 0, 0); e.hitboxes.update(36, 0, 0, 0, false); })()`);
+  await ev('window.__pz.teleport(-41, 0, 0, -Math.PI / 2)');
+  await sleep(200);
+
   // ---- plantar com o botão USAR
   const site = await ev('window.__pz.session.map.sites.A');
   await ev(`window.__pz.player.health.reset(); window.__pz.teleport(${site.x}, ${site.z}, 0)`);
@@ -135,7 +188,7 @@ try {
   const hasTouchTab = await ev("!!document.querySelector('.tab[data-tab=\"touch\"]')");
   await page.evaluate("document.querySelector('.tab[data-tab=\"touch\"]').click()"); await sleep(250);
   await page.screenshot({ path: join(out, 'touch_settings.png') });
-  check('configurações têm a aba TOQUE (sensibilidade, assistência de mira, tamanho)', hasTouchTab && (await ev("document.querySelectorAll('#menu-settings .set-row').length")) === 3);
+  check('configurações têm a aba TOQUE (sensibilidade, mira grudada, atirar sozinho, tamanho)', hasTouchTab && (await ev("document.querySelectorAll('#menu-settings .set-row').length")) === 4);
   await tap('#set-back'); await sleep(200);
   await tap('#btn-resume'); await sleep(400);
   check('CONTINUAR volta ao jogo com os controles', (await ev('window.__pz.state()')) === 'playing' && (await ev("!document.getElementById('touch-ui').classList.contains('hidden')")));

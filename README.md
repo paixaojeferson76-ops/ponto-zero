@@ -24,7 +24,7 @@ Os controles de toque seguem o estilo dos FPS mobile:
 | **Joystick** (metade esquerda, aparece onde você toca) | mover — empurre até o fim para **correr** |
 | **Arrastar** (metade direita) | olhar |
 | **TIRO** | atirar (arraste o dedo sobre ele para mirar e atirar ao mesmo tempo) |
-| **MIRAR** | zoom/ADS (segurar) |
+| **MIRAR** | zoom/ADS (segurar) — a mira **gruda no inimigo** e, alinhada, **atira sozinha** |
 | **PULAR** · **AGACHAR** | tocar (agachar liga/desliga) |
 | **RECAR.** · **ARMA** · **GRANADA** | recarregar · trocar de arma · arremessar a granada escolhida |
 | Ícones **1 2 3** e **FRAG CEGA FUMA** (embaixo) | tocar para escolher arma/granada |
@@ -35,8 +35,18 @@ Os controles de toque seguem o estilo dos FPS mobile:
 liga o modo celular sozinho. Para forçar: no menu principal, **Controles → Toque (celular)** (a página recarrega), ou abra o link com `?touch=1` no final.
 O rodapé do menu mostra o modo atual. Se a tela parecer "velha" após uma atualização, recarregue a página (cada publicação carimba a versão dos arquivos).
 
-Na primeira vez no celular o jogo já vem com qualidade **baixa** e bots **fáceis** (mudam em Configurações). A aba **Toque** ajusta
-sensibilidade, **assistência de mira** (puxa a mira de leve para o inimigo enquanto você atira) e tamanho dos botões. Se ficar pesado,
+### Mira grudada e modo fácil
+
+Como nos FPS mobile, no celular a mira **gruda no inimigo**: enquanto você **atira ou mira**, a visão encaixa no inimigo mais próximo do centro
+(um **anel vermelho** aparece na mira), **acompanha** se ele se mexer e já compensa o recuo da arma. Um **arrasto rápido** solta a trava
+(para fugir dela ou trocar de alvo). Se você **segura MIRAR** com a mira em cima do inimigo, o tiro sai **sozinho** — sem apertar TIRO.
+No celular a dispersão dos tiros também é menor (até 45 % do normal com a mira grudada em 85 %).
+
+Para ficar mais fácil ainda existe a dificuldade **Muito fácil** (bots reagem devagar, erram bastante, ouvem pouco e causam ~55 % do dano).
+Ela é o padrão da primeira vez no celular; quem já jogava no celular passa para ela uma única vez (para mudar, use **Dificuldade** no menu principal ou em **Configurações → Jogabilidade**).
+
+Na primeira vez no celular o jogo vem com qualidade **baixa** e bots **Muito fáceis** (mudam em Configurações). A aba **Toque** ajusta
+sensibilidade, **mira grudada** (0–100 %), **atirar sozinho ao mirar** (liga/desliga) e tamanho dos botões. Se ficar pesado,
 reduza a **resolução de renderização** em Vídeo. No Android o jogo pede tela cheia e paisagem; no iPhone não existe tela cheia no Safari —
 use *Compartilhar → Adicionar à Tela de Início* para abrir sem as barras.
 
@@ -85,7 +95,7 @@ Modo **Sabotagem** (Ataque × Defesa), primeiro a **5 rounds**:
 * **Atacantes** plantam a carga no **sítio A ou B** (segurar `E` por 3,2 s parado, dentro do círculo) e a protegem por 35 s.
 * **Defensores** impedem a plantação, eliminam os atacantes ou **desarmam** a carga (segurar `E` por 6 s).
 * O round acaba por detonação, desarme, eliminação total ou tempo (115 s). Preparação de 6 s (movimento travado; `B` troca a arma primária).
-* Você escolhe o lado, a dificuldade dos bots (Fácil/Normal/Difícil) e o tamanho dos times (2 a 5) no menu.
+* Você escolhe o lado, a dificuldade dos bots (Muito fácil/Fácil/Normal/Difícil) e o tamanho dos times (2 a 5) no menu.
 * Morreu? Você espectra os aliados até o próximo round.
 
 ### Armas

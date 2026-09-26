@@ -133,7 +133,7 @@ export class WeaponSystem {
   get currentSpread() {
     const def = this.def;
     if (!def || def.spreadBase === undefined) return 0;
-    return computeSpread(def, this.owner.body, this.adsAmount, this.recoil.bloom);
+    return computeSpread(def, this.owner.body, this.adsAmount, this.recoil.bloom) * (this.owner.accuracyMul ?? 1);
   }
 
   /** Progresso 0..1 da fase atual. */
@@ -399,7 +399,7 @@ export class WeaponSystem {
     const def = a.def;
     a.ammo -= 1;
 
-    const spread = computeSpread(def, owner.body, this.adsAmount, this.recoil.bloom);
+    const spread = computeSpread(def, owner.body, this.adsAmount, this.recoil.bloom) * (owner.accuracyMul ?? 1);
     const eye = owner.eyeArray();
     session.ballistics.fire(owner, def, eye[0], eye[1], eye[2], owner.aimYaw(), owner.aimPitch(), spread);
     this.recoil.onShot(def, this.adsAmount, session.rng);

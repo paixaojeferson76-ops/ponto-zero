@@ -123,6 +123,8 @@ try {
 
   // objetivo: plantar e vencer/perder round
   const site = await ev('window.__pz.session.map.sites.A');
+  // inimigos congelados: com bots reais no sítio o jogador podia morrer durante os 3,6 s do plantio (teste instável)
+  await ev('for (const b of window.__pz.session.bots) if (b.team !== window.__pz.player.team) b.frozen = true');
   await ev(`window.__pz.player.health.reset(); window.__pz.teleport(${site.x}, ${site.z}, 0)`);
   await page.keyboard.down('KeyE'); await sleep(500);
   const interact = await ev(`document.getElementById('interact').classList.contains('show')`);

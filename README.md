@@ -2,7 +2,7 @@
 
 FPS tático **original**, single-player local, feito para testes. Ataque × Defesa 5×5 contra bots, com movimentação
 de FPS competitivo, armas com recoil de verdade, IA com estados/navegação e mapa próprio.
-Roda 100 % na sua máquina — sem servidor online, sem multiplayer.
+Roda 100 % no seu navegador (local ou pelo link online) — sem servidor de jogo e sem multiplayer: os bots e toda a lógica rodam na sua própria máquina.
 
 > Inspirado na *sensação* de FPS táticos clássicos. Nenhum código, mapa, modelo, som, textura, interface ou nome
 > de Counter-Strike/CS2 foi usado. Tudo (inclusive áudio e texturas) é gerado por código — ver [`Assets/README.md`](Assets/README.md).

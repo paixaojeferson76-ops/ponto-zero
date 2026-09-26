@@ -7,7 +7,14 @@ Roda 100 % na sua máquina — sem servidor online, sem multiplayer.
 > Inspirado na *sensação* de FPS táticos clássicos. Nenhum código, mapa, modelo, som, textura, interface ou nome
 > de Counter-Strike/CS2 foi usado. Tudo (inclusive áudio e texturas) é gerado por código — ver [`Assets/README.md`](Assets/README.md).
 
-## Como executar
+## Jogar online
+
+**https://paixaojeferson76-ops.github.io/ponto-zero/** — abre direto no navegador, sem instalar nada.
+Precisa de um **computador com teclado e mouse** e do **Chrome ou Edge** atuais (Firefox costuma funcionar; celular/tablet não).
+O site é publicado automaticamente pelo GitHub Pages a cada `git push` na branch `main` — só depois de os testes da simulação passarem
+(veja [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)). As configurações de cada pessoa ficam salvas no próprio navegador dela.
+
+## Como executar (local)
 
 **Windows (mais fácil):** dê duplo clique em [`start.bat`](start.bat). Ele sobe o servidor local e abre o jogo em uma janela do
 Chrome/Edge (modo app). Fechou a janela → o servidor encerra sozinho.
